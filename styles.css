@@ -1,0 +1,231 @@
+/* Flint — Idea Spark  (fk- prefix) */
+
+/* Modal sizing — target the Obsidian .modal wrapper */
+.fk-spark-modal-container {
+  max-width: 750px;
+  width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+/* Header */
+.fk-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.fk-header h3 {
+  margin: 0;
+}
+
+.fk-header-tagline {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  font-style: italic;
+}
+
+/* Two-column layout */
+.fk-columns {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* Each note panel */
+.fk-panel {
+  flex: 1;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fk-panel-title {
+  font-weight: 600;
+  font-size: 0.95em;
+  margin-bottom: 8px;
+  cursor: pointer;
+  color: var(--text-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fk-panel-title:hover {
+  text-decoration: underline;
+}
+
+.fk-panel-content {
+  flex: 1;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.85em;
+  line-height: 1.5;
+  color: var(--text-normal);
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 6px 4px;
+  background: var(--background-secondary);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+/* Panel action buttons */
+.fk-panel-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.fk-action-btn {
+  flex: 1;
+  font-size: 0.8em;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+/* Writing area */
+.fk-writing-area {
+  margin-bottom: 12px;
+}
+
+.fk-writing-label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+  font-size: 0.9em;
+}
+
+.fk-idea-textarea {
+  width: 100%;
+  min-height: 100px;
+  resize: vertical;
+  font-size: 0.95em;
+  line-height: 1.5;
+  padding: 8px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  font-family: inherit;
+  margin-bottom: 8px;
+}
+
+.fk-idea-textarea:focus {
+  border-color: var(--interactive-accent);
+  outline: none;
+}
+
+.fk-idea-textarea::placeholder {
+  color: var(--text-faint);
+}
+
+/* Title row */
+.fk-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.fk-title-label {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fk-title-input {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 0.9em;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+
+.fk-title-input:focus {
+  border-color: var(--interactive-accent);
+  outline: none;
+}
+
+/* Folder row */
+.fk-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.fk-folder-label {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fk-folder-select {
+  flex: 1;
+  padding: 4px 8px;
+  font-size: 0.85em;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+
+/* Project checkboxes (Cairn integration) */
+.fk-project-section {
+  margin: 8px 0 12px;
+}
+
+.fk-project-label {
+  display: block;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.fk-check-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0;
+  padding: 2px 0;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+.fk-check-row input[type="checkbox"] {
+  margin: 0;
+}
+
+/* Button row */
+.fk-btn-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/* Stats in settings */
+.fk-stats h4 {
+  margin: 8px 0 4px;
+  font-size: 0.9em;
+}
+
+.fk-stats p {
+  color: var(--text-muted);
+  font-size: 0.85em;
+  margin: 0;
+}
+
+/* About in settings */
+.fk-about p {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}

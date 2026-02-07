@@ -1,0 +1,11 @@
+{
+  "id": "flint",
+  "name": "Flint — Idea Spark",
+  "version": "0.1.0",
+  "minAppVersion": "0.15.0",
+  "description": "Strike two notes together to spark a third. Random juxtaposition for idea generation.",
+  "author": "Maggie McGuire",
+  "authorUrl": "https://moabsunnews.com",
+  "fundingUrl": "https://venmo.com/KiKiBouba",
+  "isDesktopOnly": false
+}
