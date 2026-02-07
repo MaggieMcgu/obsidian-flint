@@ -102,7 +102,7 @@ var NotePickerModal = class extends import_obsidian.FuzzySuggestModal {
   }
 };
 var SparkModal = class extends import_obsidian.Modal {
-  constructor(app, noteA, noteB, contentA, contentB, settings, cairnProjects, onSpark, onSkip, onShuffle, onPick) {
+  constructor(app, noteA, noteB, contentA, contentB, settings, cairnProjects, onSpark, onSkip, onShuffle, onPick, onSettingsChange) {
     super(app);
     this.noteA = noteA;
     this.noteB = noteB;
@@ -114,6 +114,7 @@ var SparkModal = class extends import_obsidian.Modal {
     this.onSkip = onSkip;
     this.onShuffle = onShuffle;
     this.onPick = onPick;
+    this.onSettingsChange = onSettingsChange;
   }
   onOpen() {
     const { contentEl, modalEl } = this;
@@ -122,6 +123,40 @@ var SparkModal = class extends import_obsidian.Modal {
     const header = contentEl.createDiv({ cls: "fk-header" });
     header.createEl("h3", { text: "Flint" });
     header.createEl("span", { cls: "fk-header-tagline", text: "Strike two ideas together" });
+    const sourceRow = contentEl.createDiv({ cls: "fk-source-row" });
+    sourceRow.createEl("span", { cls: "fk-source-label", text: "Drawing from:" });
+    const sourceSelect = sourceRow.createEl("select", { cls: "fk-source-select" });
+    sourceSelect.createEl("option", { text: "All folders", value: "" });
+    const allFolders = [];
+    this.app.vault.getAllLoadedFiles().forEach((f) => {
+      if (f.children !== void 0 && f.path !== "/") {
+        allFolders.push(f.path);
+      }
+    });
+    allFolders.sort();
+    for (const folder of allFolders) {
+      const opt = sourceSelect.createEl("option", { text: folder, value: folder });
+      if (folder === this.settings.sourceFolder)
+        opt.selected = true;
+    }
+    sourceSelect.addEventListener("change", async () => {
+      this.settings.sourceFolder = sourceSelect.value;
+      this.onSettingsChange();
+      await this.shuffleBoth();
+    });
+    const outputRow = contentEl.createDiv({ cls: "fk-source-row" });
+    outputRow.createEl("span", { cls: "fk-source-label", text: "Saving to:" });
+    const outputSelect = outputRow.createEl("select", { cls: "fk-source-select" });
+    outputSelect.createEl("option", { text: "Vault root", value: "" });
+    for (const folder of allFolders) {
+      const opt = outputSelect.createEl("option", { text: folder, value: folder });
+      if (folder === this.settings.outputFolder)
+        opt.selected = true;
+    }
+    outputSelect.addEventListener("change", () => {
+      this.settings.outputFolder = outputSelect.value;
+      this.onSettingsChange();
+    });
     const columns = contentEl.createDiv({ cls: "fk-columns" });
     const panelA = this.buildPanel(columns, "A");
     const panelB = this.buildPanel(columns, "B");
@@ -167,22 +202,6 @@ var SparkModal = class extends import_obsidian.Modal {
     textarea.addEventListener("input", () => {
       updateTitle();
     });
-    const folderRow = writing.createDiv({ cls: "fk-folder-row" });
-    folderRow.createEl("span", { cls: "fk-folder-label", text: "Folder:" });
-    const folderSelect = folderRow.createEl("select", { cls: "fk-folder-select" });
-    folderSelect.createEl("option", { text: "Vault root", value: "" });
-    const folders = [];
-    this.app.vault.getAllLoadedFiles().forEach((f) => {
-      if (f.children !== void 0 && f.path !== "/") {
-        folders.push(f.path);
-      }
-    });
-    folders.sort();
-    for (const folder of folders) {
-      const opt = folderSelect.createEl("option", { text: folder, value: folder });
-      if (folder === this.settings.outputFolder)
-        opt.selected = true;
-    }
     const projectCheckboxes = /* @__PURE__ */ new Map();
     if (this.cairnProjects.length > 0) {
       const projectSection = contentEl.createDiv({ cls: "fk-project-section" });
@@ -218,7 +237,7 @@ var SparkModal = class extends import_obsidian.Modal {
         new import_obsidian.Notice("Note title cannot be empty");
         return;
       }
-      const folder = folderSelect.value;
+      const folder = outputSelect.value;
       const selectedIds = [];
       projectCheckboxes.forEach((cb, id) => {
         if (cb.checked)
@@ -320,9 +339,12 @@ var SparkModal = class extends import_obsidian.Modal {
       this.contentB = cB;
       this.renderPanel("A");
       this.renderPanel("B");
-      textarea.value = "";
-      titleInput.value = "";
-      setTimeout(() => textarea.focus(), 50);
+      if (textarea)
+        textarea.value = "";
+      if (titleInput)
+        titleInput.value = "";
+      if (textarea)
+        setTimeout(() => textarea.focus(), 50);
     });
   }
   onClose() {
@@ -383,6 +405,10 @@ var FlintPlugin = class extends import_obsidian.Plugin {
           this.settings.sourceFolder,
           onChoose
         ).open();
+      },
+      // onSettingsChange
+      () => {
+        this.saveSettings();
       }
     ).open();
   }

@@ -157,6 +157,7 @@ class SparkModal extends Modal {
   onSkip: (fileA: TFile, fileB: TFile) => void;
   onShuffle: (exclude: string[]) => TFile | null;
   onPick: (onChoose: (file: TFile) => void) => void;
+  onSettingsChange: () => void;
 
   // DOM refs for in-place updates
   private panelTitleA!: HTMLElement;
@@ -182,7 +183,8 @@ class SparkModal extends Modal {
     ) => Promise<void>,
     onSkip: (fileA: TFile, fileB: TFile) => void,
     onShuffle: (exclude: string[]) => TFile | null,
-    onPick: (onChoose: (file: TFile) => void) => void
+    onPick: (onChoose: (file: TFile) => void) => void,
+    onSettingsChange: () => void
   ) {
     super(app);
     this.noteA = noteA;
@@ -195,6 +197,7 @@ class SparkModal extends Modal {
     this.onSkip = onSkip;
     this.onShuffle = onShuffle;
     this.onPick = onPick;
+    this.onSettingsChange = onSettingsChange;
   }
 
   onOpen() {
@@ -206,6 +209,44 @@ class SparkModal extends Modal {
     const header = contentEl.createDiv({ cls: "fk-header" });
     header.createEl("h3", { text: "Flint" });
     header.createEl("span", { cls: "fk-header-tagline", text: "Strike two ideas together" });
+
+    // Source folder selector
+    const sourceRow = contentEl.createDiv({ cls: "fk-source-row" });
+    sourceRow.createEl("span", { cls: "fk-source-label", text: "Drawing from:" });
+    const sourceSelect = sourceRow.createEl("select", { cls: "fk-source-select" });
+    sourceSelect.createEl("option", { text: "All folders", value: "" });
+
+    const allFolders: string[] = [];
+    this.app.vault.getAllLoadedFiles().forEach((f) => {
+      if ((f as TFolder).children !== undefined && f.path !== "/") {
+        allFolders.push(f.path);
+      }
+    });
+    allFolders.sort();
+    for (const folder of allFolders) {
+      const opt = sourceSelect.createEl("option", { text: folder, value: folder });
+      if (folder === this.settings.sourceFolder) opt.selected = true;
+    }
+    sourceSelect.addEventListener("change", async () => {
+      this.settings.sourceFolder = sourceSelect.value;
+      this.onSettingsChange();
+      // Reshuffle both panels with new source folder
+      await this.shuffleBoth();
+    });
+
+    // Output folder selector
+    const outputRow = contentEl.createDiv({ cls: "fk-source-row" });
+    outputRow.createEl("span", { cls: "fk-source-label", text: "Saving to:" });
+    const outputSelect = outputRow.createEl("select", { cls: "fk-source-select" });
+    outputSelect.createEl("option", { text: "Vault root", value: "" });
+    for (const folder of allFolders) {
+      const opt = outputSelect.createEl("option", { text: folder, value: folder });
+      if (folder === this.settings.outputFolder) opt.selected = true;
+    }
+    outputSelect.addEventListener("change", () => {
+      this.settings.outputFolder = outputSelect.value;
+      this.onSettingsChange();
+    });
 
     // Two-column layout
     const columns = contentEl.createDiv({ cls: "fk-columns" });
@@ -266,24 +307,6 @@ class SparkModal extends Modal {
       updateTitle();
     });
 
-    // Folder picker
-    const folderRow = writing.createDiv({ cls: "fk-folder-row" });
-    folderRow.createEl("span", { cls: "fk-folder-label", text: "Folder:" });
-    const folderSelect = folderRow.createEl("select", { cls: "fk-folder-select" });
-    folderSelect.createEl("option", { text: "Vault root", value: "" });
-
-    const folders: string[] = [];
-    this.app.vault.getAllLoadedFiles().forEach((f) => {
-      if ((f as TFolder).children !== undefined && f.path !== "/") {
-        folders.push(f.path);
-      }
-    });
-    folders.sort();
-    for (const folder of folders) {
-      const opt = folderSelect.createEl("option", { text: folder, value: folder });
-      if (folder === this.settings.outputFolder) opt.selected = true;
-    }
-
     // Cairn project checkboxes (if Cairn is installed with projects)
     const projectCheckboxes: Map<string, HTMLInputElement> = new Map();
     if (this.cairnProjects.length > 0) {
@@ -325,7 +348,7 @@ class SparkModal extends Modal {
         new Notice("Note title cannot be empty");
         return;
       }
-      const folder = folderSelect.value;
+      const folder = outputSelect.value;
       const selectedIds: string[] = [];
       projectCheckboxes.forEach((cb, id) => {
         if (cb.checked) selectedIds.push(id);
@@ -426,7 +449,7 @@ class SparkModal extends Modal {
     });
   }
 
-  private shuffleBoth(textarea: HTMLTextAreaElement, titleInput: HTMLInputElement) {
+  private shuffleBoth(textarea?: HTMLTextAreaElement, titleInput?: HTMLInputElement) {
     const excludeA: string[] = [];
     const newA = this.onShuffle(excludeA);
     if (!newA) return;
@@ -443,9 +466,9 @@ class SparkModal extends Modal {
       this.contentB = cB;
       this.renderPanel("A");
       this.renderPanel("B");
-      textarea.value = "";
-      titleInput.value = "";
-      setTimeout(() => textarea.focus(), 50);
+      if (textarea) textarea.value = "";
+      if (titleInput) titleInput.value = "";
+      if (textarea) setTimeout(() => textarea.focus(), 50);
     });
   }
 
@@ -521,7 +544,9 @@ export default class FlintPlugin extends Plugin {
           this.settings.sourceFolder,
           onChoose
         ).open();
-      }
+      },
+      // onSettingsChange
+      () => { this.saveSettings(); }
     ).open();
   }
 

@@ -26,6 +26,30 @@
   font-style: italic;
 }
 
+/* Source folder selector */
+.fk-source-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.85em;
+}
+
+.fk-source-label {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.fk-source-select {
+  flex: 1;
+  padding: 3px 6px;
+  font-size: 0.9em;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  background: var(--background-primary);
+  color: var(--text-normal);
+}
+
 /* Two-column layout */
 .fk-columns {
   display: flex;
