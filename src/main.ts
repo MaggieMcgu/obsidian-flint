@@ -617,7 +617,14 @@ export default class FlintPlugin extends Plugin {
       }
     }
 
-    new Notice(`Sparked "${safeName}"`);
+    const frag = document.createDocumentFragment();
+    frag.appendText("Sparked ");
+    const link = frag.createEl("a", { text: safeName });
+    link.addEventListener("click", () => {
+      const f = this.app.vault.getAbstractFileByPath(targetPath);
+      if (f instanceof TFile) this.app.workspace.getLeaf(false).openFile(f);
+    });
+    new Notice(frag);
   }
 
   async addToEssay(sparkFile: TFile, project: CairnProject) {

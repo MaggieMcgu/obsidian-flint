@@ -470,7 +470,15 @@ var FlintPlugin = class extends import_obsidian.Plugin {
         }
       }
     }
-    new import_obsidian.Notice(`Sparked "${safeName}"`);
+    const frag = document.createDocumentFragment();
+    frag.appendText("Sparked ");
+    const link = frag.createEl("a", { text: safeName });
+    link.addEventListener("click", () => {
+      const f = this.app.vault.getAbstractFileByPath(targetPath);
+      if (f instanceof import_obsidian.TFile)
+        this.app.workspace.getLeaf(false).openFile(f);
+    });
+    new import_obsidian.Notice(frag);
   }
   async addToEssay(sparkFile, project) {
     const projectFile = this.app.vault.getAbstractFileByPath(project.filePath);
