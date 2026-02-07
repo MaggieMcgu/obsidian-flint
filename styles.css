@@ -2,11 +2,13 @@
 
 /* Modal sizing — target the Obsidian .modal wrapper */
 .fk-spark-modal-container {
-  max-width: 720px;
-  width: 90vw;
+  width: 680px;
+  min-width: 400px;
+  max-width: 95vw;
   max-height: 85vh;
-  overflow-y: auto;
+  overflow: auto;
   border-radius: 12px;
+  resize: both;
 }
 
 .fk-spark-modal {
