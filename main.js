@@ -123,10 +123,6 @@ var SparkModal = class extends import_obsidian.Modal {
     const header = contentEl.createDiv({ cls: "fk-header" });
     header.createEl("h3", { text: "Flint" });
     header.createEl("span", { cls: "fk-header-tagline", text: "Strike two ideas together" });
-    const sourceRow = contentEl.createDiv({ cls: "fk-source-row" });
-    sourceRow.createEl("span", { cls: "fk-source-label", text: "Drawing from:" });
-    const sourceSelect = sourceRow.createEl("select", { cls: "fk-source-select" });
-    sourceSelect.createEl("option", { text: "All folders", value: "" });
     const allFolders = [];
     this.app.vault.getAllLoadedFiles().forEach((f) => {
       if (f.children !== void 0 && f.path !== "/") {
@@ -134,6 +130,11 @@ var SparkModal = class extends import_obsidian.Modal {
       }
     });
     allFolders.sort();
+    const configRow = contentEl.createDiv({ cls: "fk-config-row" });
+    const sourceGroup = configRow.createDiv({ cls: "fk-config-group" });
+    sourceGroup.createEl("span", { cls: "fk-config-label", text: "from" });
+    const sourceSelect = sourceGroup.createEl("select", { cls: "fk-config-select" });
+    sourceSelect.createEl("option", { text: "All folders", value: "" });
     for (const folder of allFolders) {
       const opt = sourceSelect.createEl("option", { text: folder, value: folder });
       if (folder === this.settings.sourceFolder)
@@ -144,9 +145,9 @@ var SparkModal = class extends import_obsidian.Modal {
       this.onSettingsChange();
       await this.shuffleBoth();
     });
-    const outputRow = contentEl.createDiv({ cls: "fk-source-row" });
-    outputRow.createEl("span", { cls: "fk-source-label", text: "Saving to:" });
-    const outputSelect = outputRow.createEl("select", { cls: "fk-source-select" });
+    const outputGroup = configRow.createDiv({ cls: "fk-config-group" });
+    outputGroup.createEl("span", { cls: "fk-config-label", text: "to" });
+    const outputSelect = outputGroup.createEl("select", { cls: "fk-config-select" });
     outputSelect.createEl("option", { text: "Vault root", value: "" });
     for (const folder of allFolders) {
       const opt = outputSelect.createEl("option", { text: folder, value: folder });
@@ -168,8 +169,8 @@ var SparkModal = class extends import_obsidian.Modal {
     this.renderPanel("B");
     const writing = contentEl.createDiv({ cls: "fk-writing-area" });
     writing.createEl("label", {
-      cls: "fk-writing-label",
-      text: "What does this combination make you think?"
+      cls: "fk-writing-prompt",
+      text: "What does this collision make you think?"
     });
     const textarea = writing.createEl("textarea", {
       cls: "fk-idea-textarea",

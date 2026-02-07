@@ -210,12 +210,7 @@ class SparkModal extends Modal {
     header.createEl("h3", { text: "Flint" });
     header.createEl("span", { cls: "fk-header-tagline", text: "Strike two ideas together" });
 
-    // Source folder selector
-    const sourceRow = contentEl.createDiv({ cls: "fk-source-row" });
-    sourceRow.createEl("span", { cls: "fk-source-label", text: "Drawing from:" });
-    const sourceSelect = sourceRow.createEl("select", { cls: "fk-source-select" });
-    sourceSelect.createEl("option", { text: "All folders", value: "" });
-
+    // Folder config row (compact, single line)
     const allFolders: string[] = [];
     this.app.vault.getAllLoadedFiles().forEach((f) => {
       if ((f as TFolder).children !== undefined && f.path !== "/") {
@@ -223,6 +218,13 @@ class SparkModal extends Modal {
       }
     });
     allFolders.sort();
+
+    const configRow = contentEl.createDiv({ cls: "fk-config-row" });
+
+    const sourceGroup = configRow.createDiv({ cls: "fk-config-group" });
+    sourceGroup.createEl("span", { cls: "fk-config-label", text: "from" });
+    const sourceSelect = sourceGroup.createEl("select", { cls: "fk-config-select" });
+    sourceSelect.createEl("option", { text: "All folders", value: "" });
     for (const folder of allFolders) {
       const opt = sourceSelect.createEl("option", { text: folder, value: folder });
       if (folder === this.settings.sourceFolder) opt.selected = true;
@@ -230,14 +232,12 @@ class SparkModal extends Modal {
     sourceSelect.addEventListener("change", async () => {
       this.settings.sourceFolder = sourceSelect.value;
       this.onSettingsChange();
-      // Reshuffle both panels with new source folder
       await this.shuffleBoth();
     });
 
-    // Output folder selector
-    const outputRow = contentEl.createDiv({ cls: "fk-source-row" });
-    outputRow.createEl("span", { cls: "fk-source-label", text: "Saving to:" });
-    const outputSelect = outputRow.createEl("select", { cls: "fk-source-select" });
+    const outputGroup = configRow.createDiv({ cls: "fk-config-group" });
+    outputGroup.createEl("span", { cls: "fk-config-label", text: "to" });
+    const outputSelect = outputGroup.createEl("select", { cls: "fk-config-select" });
     outputSelect.createEl("option", { text: "Vault root", value: "" });
     for (const folder of allFolders) {
       const opt = outputSelect.createEl("option", { text: folder, value: folder });
@@ -264,8 +264,8 @@ class SparkModal extends Modal {
     // Writing area
     const writing = contentEl.createDiv({ cls: "fk-writing-area" });
     writing.createEl("label", {
-      cls: "fk-writing-label",
-      text: "What does this combination make you think?",
+      cls: "fk-writing-prompt",
+      text: "What does this collision make you think?",
     });
 
     const textarea = writing.createEl("textarea", {
