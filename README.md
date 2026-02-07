@@ -2,6 +2,8 @@
 
 Strike two notes together. Write what the collision reveals.
 
+![Flint modal showing two notes side by side with a writing area below](screenshot.png)
+
 I built Flint because I had hundreds of notes and no idea what they meant together. I'd browse my vault and see the same familiar paths every time. Flint fixes that by picking two notes at random, putting them side by side, and asking: *what does this combination make you think?*
 
 Sometimes nothing. Skip, shuffle, try again. But sometimes two notes that have no business being next to each other produce an idea that neither one contains alone. That's the spark. You write it down, it becomes a new note, and it links back to its parents.

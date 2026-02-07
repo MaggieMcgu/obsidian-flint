@@ -125,7 +125,7 @@
 
 .fk-panel-content {
   flex: 1;
-  max-height: 200px;
+  max-height: 140px;
   overflow-y: auto;
   font-size: 0.85em;
   line-height: 1.6;
