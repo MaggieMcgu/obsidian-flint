@@ -295,11 +295,7 @@ class SparkModal extends Modal {
         if (titleManuallyEdited) return;
         const ideaText = textarea.value.trim();
         if (ideaText) {
-          const suggested =
-            ideaText.length > 60
-              ? ideaText.substring(0, 60).replace(/\s+\S*$/, "")
-              : ideaText;
-          titleInput.value = suggested;
+          titleInput.value = ideaText.split("\n")[0];
         }
       },
       500,
@@ -366,6 +362,13 @@ class SparkModal extends Modal {
     };
 
     saveBtn.addEventListener("click", submit);
+
+    textarea.addEventListener("keydown", (e: KeyboardEvent) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        submit();
+      }
+    });
 
     // Focus textarea
     setTimeout(() => textarea.focus(), 50);

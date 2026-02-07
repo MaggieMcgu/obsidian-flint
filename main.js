@@ -196,8 +196,7 @@ var SparkModal = class extends import_obsidian.Modal {
           return;
         const ideaText = textarea.value.trim();
         if (ideaText) {
-          const suggested = ideaText.length > 60 ? ideaText.substring(0, 60).replace(/\s+\S*$/, "") : ideaText;
-          titleInput.value = suggested;
+          titleInput.value = ideaText.split("\n")[0];
         }
       },
       500,
@@ -257,6 +256,12 @@ var SparkModal = class extends import_obsidian.Modal {
       this.shuffleBoth(textarea, titleInput);
     };
     saveBtn.addEventListener("click", submit);
+    textarea.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        submit();
+      }
+    });
     setTimeout(() => textarea.focus(), 50);
   }
   buildPanel(parent, side) {
