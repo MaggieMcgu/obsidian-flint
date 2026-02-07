@@ -2,17 +2,19 @@
 
 Strike two notes together. Write what the collision reveals.
 
-Flint picks two random notes from your vault, places them side by side, and asks: *what does this combination make you think?* If something sparks, write it down and save it as a new note. If nothing clicks, skip and try another pair.
+I built Flint because I had hundreds of notes and no idea what they meant together. I'd browse my vault and see the same familiar paths every time. Flint fixes that by picking two notes at random, putting them side by side, and asking: *what does this combination make you think?*
 
-Over time you build a web of original ideas born from juxtaposition — connections you'd never have made browsing your vault sequentially.
+Sometimes nothing. Skip, shuffle, try again. But sometimes two notes that have no business being next to each other produce an idea that neither one contains alone. That's the spark. You write it down, it becomes a new note, and it links back to its parents.
+
+This is basically the first thing I've ever coded. It's simple and it's fun and I use it all the time.
 
 ## How it works
 
 1. **Open Flint** — Command palette (`Flint: Strike two notes`) or the flame icon in the ribbon
-2. **Read the pair** — Two random notes displayed side by side
-3. **Shuffle or pick** — Replace either note with another random pick, or search for a specific one
-4. **Write the spark** — What does the collision make you think? Type your idea in the text area
-5. **Save** — Creates a new note with your spark and backlinks to both source notes
+2. **Read the pair** — Two random notes side by side
+3. **Shuffle or pick** — Swap either note for a new random one, or search for something specific
+4. **Write the spark** — Type the idea the collision gave you
+5. **Save** — New note with backlinks to both parents
 
 Saved sparks look like this:
 
@@ -27,20 +29,17 @@ Your original idea goes here.
 - [[Note B]]
 ```
 
-## Features
+## The orphan thing
 
-- **Weighted randomness** — Optionally favors notes with fewer connections (orphans are dormant potential)
-- **Session memory** — Won't repeat notes you've already seen until the pool is exhausted
-- **Folder scoping** — Draw from a specific folder, save sparks to another
-- **Keyboard shortcut** — `Cmd/Ctrl+Enter` to save without leaving the keyboard
-- **Clickable notifications** — After saving, click the notice to jump to your new spark
-- **Resizable dialog** — Drag the corner to make the modal wider or taller
+Flint can weight its randomness toward notes with fewer connections — the ones you haven't linked to much, the ones gathering dust. Turns out those are often the most surprising ones to collide. Your most neglected notes might be your best material. Toggle this in settings.
 
-## Settings
+## Other details
 
-- **Source folder** — Which notes to draw from (default: entire vault)
-- **Output folder** — Where new spark notes are saved (default: vault root)
-- **Prefer orphan notes** — Weight selection toward less-connected notes
+- Won't repeat notes you've already seen (resets when it runs out)
+- Scope to a specific folder if you want, or let it roam the whole vault
+- `Cmd/Ctrl+Enter` to save without reaching for the mouse
+- Click the notification after saving to jump straight to your new note
+- Drag the corner to resize the dialog
 
 ## Install
 
@@ -59,7 +58,9 @@ Your original idea goes here.
 
 ## Why "Flint"?
 
-Flint is a sister plugin to [Cairn](https://github.com/MaggieMcgu/obsidian-cairn) (an essay composer). Both are rocks. Cairn builds structure from existing notes. Flint strikes two ideas together to create something new.
+Sister plugin to [Cairn](https://github.com/MaggieMcgu/obsidian-cairn), an essay composer — that one's the more complicated work-in-progress. Both are rocks. Cairn stacks notes into structure. Flint strikes them together to see what catches fire.
+
+I'd love to hear how you use it, what's broken, or what would make it better. Open an [issue](https://github.com/MaggieMcgu/obsidian-flint/issues) or find me at [moabsunnews.com](https://moabsunnews.com).
 
 ## Support
 
