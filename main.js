@@ -104,6 +104,7 @@ var NotePickerModal = class extends import_obsidian.FuzzySuggestModal {
 var SparkModal = class extends import_obsidian.Modal {
   constructor(app, noteA, noteB, contentA, contentB, settings, cairnProjects, onSpark, onSkip, onShuffle, onPick, onSettingsChange) {
     super(app);
+    this.seenPaths = /* @__PURE__ */ new Set();
     this.noteA = noteA;
     this.noteB = noteB;
     this.contentA = contentA;
@@ -165,6 +166,8 @@ var SparkModal = class extends import_obsidian.Modal {
     this.panelContentA = panelA.contentEl;
     this.panelTitleB = panelB.titleEl;
     this.panelContentB = panelB.contentEl;
+    this.seenPaths.add(this.noteA.path);
+    this.seenPaths.add(this.noteB.path);
     this.renderPanel("A");
     this.renderPanel("B");
     const writing = contentEl.createDiv({ cls: "fk-writing-area" });
@@ -305,12 +308,31 @@ var SparkModal = class extends import_obsidian.Modal {
     this.renderPanel(side);
   }
   shuffleOne(side) {
-    const exclude = [this.noteA.path, this.noteB.path];
+    const exclude = [...this.seenPaths];
     const newNote = this.onShuffle(exclude);
     if (!newNote) {
-      new import_obsidian.Notice("No more notes to shuffle \u2014 try broadening your source folder.");
+      this.seenPaths.clear();
+      this.seenPaths.add(this.noteA.path);
+      this.seenPaths.add(this.noteB.path);
+      const retry = this.onShuffle([...this.seenPaths]);
+      if (!retry) {
+        new import_obsidian.Notice("No more notes to shuffle \u2014 try broadening your source folder.");
+        return;
+      }
+      this.seenPaths.add(retry.path);
+      this.app.vault.read(retry).then((content) => {
+        if (side === "A") {
+          this.noteA = retry;
+          this.contentA = content;
+        } else {
+          this.noteB = retry;
+          this.contentB = content;
+        }
+        this.renderPanel(side);
+      });
       return;
     }
+    this.seenPaths.add(newNote.path);
     this.app.vault.read(newNote).then((content) => {
       if (side === "A") {
         this.noteA = newNote;

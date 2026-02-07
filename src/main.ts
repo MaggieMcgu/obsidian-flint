@@ -157,6 +157,7 @@ class SparkModal extends Modal {
   onSkip: (fileA: TFile, fileB: TFile) => void;
   onShuffle: (exclude: string[]) => TFile | null;
   onPick: (onChoose: (file: TFile) => void) => void;
+  private seenPaths: Set<string> = new Set();
   onSettingsChange: () => void;
 
   // DOM refs for in-place updates
@@ -258,6 +259,8 @@ class SparkModal extends Modal {
     this.panelTitleB = panelB.titleEl;
     this.panelContentB = panelB.contentEl;
 
+    this.seenPaths.add(this.noteA.path);
+    this.seenPaths.add(this.noteB.path);
     this.renderPanel("A");
     this.renderPanel("B");
 
@@ -431,12 +434,27 @@ class SparkModal extends Modal {
   }
 
   private shuffleOne(side: "A" | "B") {
-    const exclude = [this.noteA.path, this.noteB.path];
+    const exclude = [...this.seenPaths];
     const newNote = this.onShuffle(exclude);
     if (!newNote) {
-      new Notice("No more notes to shuffle — try broadening your source folder.");
+      // Reset seen paths (keep only current pair) and try again
+      this.seenPaths.clear();
+      this.seenPaths.add(this.noteA.path);
+      this.seenPaths.add(this.noteB.path);
+      const retry = this.onShuffle([...this.seenPaths]);
+      if (!retry) {
+        new Notice("No more notes to shuffle — try broadening your source folder.");
+        return;
+      }
+      this.seenPaths.add(retry.path);
+      this.app.vault.read(retry).then((content) => {
+        if (side === "A") { this.noteA = retry; this.contentA = content; }
+        else { this.noteB = retry; this.contentB = content; }
+        this.renderPanel(side);
+      });
       return;
     }
+    this.seenPaths.add(newNote.path);
     this.app.vault.read(newNote).then((content) => {
       if (side === "A") {
         this.noteA = newNote;
