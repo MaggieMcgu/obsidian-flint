@@ -621,13 +621,17 @@ export default class FlintPlugin extends Plugin {
     }
 
     const frag = document.createDocumentFragment();
-    frag.appendText("Sparked ");
-    const link = frag.createEl("a", { text: safeName });
+    frag.append("Sparked ");
+    const link = document.createElement("a");
+    link.textContent = safeName;
+    link.style.cursor = "pointer";
+    link.style.textDecoration = "underline";
     link.addEventListener("click", () => {
       const f = this.app.vault.getAbstractFileByPath(targetPath);
       if (f instanceof TFile) this.app.workspace.getLeaf(false).openFile(f);
     });
-    new Notice(frag);
+    frag.append(link);
+    new Notice(frag, 8000);
   }
 
   async addToEssay(sparkFile: TFile, project: CairnProject) {
