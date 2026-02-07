@@ -358,7 +358,6 @@ class SparkModal extends Modal {
       titleManuallyEdited = false;
       // Uncheck all project boxes for next spark
       projectCheckboxes.forEach((cb) => { cb.checked = false; });
-      this.shuffleBoth(textarea, titleInput);
     };
 
     saveBtn.addEventListener("click", submit);
@@ -502,6 +501,7 @@ class SparkModal extends Modal {
 
 export default class FlintPlugin extends Plugin {
   settings!: FlintSettings;
+  activeModal?: SparkModal;
 
   async onload() {
     await this.loadSettings();
@@ -540,7 +540,7 @@ export default class FlintPlugin extends Plugin {
       ? await getCairnProjects(this.app)
       : [];
 
-    new SparkModal(
+    const modal = new SparkModal(
       this.app,
       noteA,
       noteB,
@@ -568,7 +568,9 @@ export default class FlintPlugin extends Plugin {
       },
       // onSettingsChange
       () => { this.saveSettings(); }
-    ).open();
+    );
+    this.activeModal = modal;
+    modal.open();
   }
 
   async createSparkNote(
@@ -627,6 +629,7 @@ export default class FlintPlugin extends Plugin {
     link.style.cursor = "pointer";
     link.style.textDecoration = "underline";
     link.addEventListener("click", () => {
+      if (this.activeModal) this.activeModal.close();
       const f = this.app.vault.getAbstractFileByPath(targetPath);
       if (f instanceof TFile) this.app.workspace.getLeaf(false).openFile(f);
     });

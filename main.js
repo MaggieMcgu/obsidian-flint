@@ -253,7 +253,6 @@ var SparkModal = class extends import_obsidian.Modal {
       projectCheckboxes.forEach((cb) => {
         cb.checked = false;
       });
-      this.shuffleBoth(textarea, titleInput);
     };
     saveBtn.addEventListener("click", submit);
     textarea.addEventListener("keydown", (e) => {
@@ -408,7 +407,7 @@ var FlintPlugin = class extends import_obsidian.Plugin {
     const contentA = await this.app.vault.read(noteA);
     const contentB = await this.app.vault.read(noteB);
     const cairnProjects = this.settings.showEssayProjects ? await getCairnProjects(this.app) : [];
-    new SparkModal(
+    const modal = new SparkModal(
       this.app,
       noteA,
       noteB,
@@ -438,7 +437,9 @@ var FlintPlugin = class extends import_obsidian.Plugin {
       () => {
         this.saveSettings();
       }
-    ).open();
+    );
+    this.activeModal = modal;
+    modal.open();
   }
   async createSparkNote(idea, title, folder, noteA, noteB, selectedProjectIds, cairnProjects) {
     const safeName = sanitizeFilename(title);
@@ -482,6 +483,8 @@ var FlintPlugin = class extends import_obsidian.Plugin {
     link.style.cursor = "pointer";
     link.style.textDecoration = "underline";
     link.addEventListener("click", () => {
+      if (this.activeModal)
+        this.activeModal.close();
       const f = this.app.vault.getAbstractFileByPath(targetPath);
       if (f instanceof import_obsidian.TFile)
         this.app.workspace.getLeaf(false).openFile(f);
