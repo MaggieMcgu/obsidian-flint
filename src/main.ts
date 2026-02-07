@@ -299,7 +299,7 @@ class SparkModal extends Modal {
         }
       },
       500,
-      true
+      false
     );
 
     textarea.addEventListener("input", () => {

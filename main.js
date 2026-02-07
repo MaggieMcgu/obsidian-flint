@@ -200,7 +200,7 @@ var SparkModal = class extends import_obsidian.Modal {
         }
       },
       500,
-      true
+      false
     );
     textarea.addEventListener("input", () => {
       updateTitle();
