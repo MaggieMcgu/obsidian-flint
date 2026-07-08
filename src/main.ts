@@ -324,7 +324,14 @@ class SparkModal extends Modal {
     // Button row
     const btnRow = contentEl.createDiv({ cls: "fk-btn-row" });
 
-    const skipBtn = btnRow.createEl("button", { text: "Skip" });
+    const pickBtn = btnRow.createEl("button", { text: "Pick specific card" });
+    pickBtn.addEventListener("click", () => {
+      this.onPick((file: TFile) => {
+        this.chooseSlotAndReplace(file);
+      });
+    });
+
+    const skipBtn = btnRow.createEl("button", { text: "New cards" });
     skipBtn.addEventListener("click", () => {
       this.onSkip(this.noteA, this.noteB);
       this.shuffleBoth(textarea, titleInput);
@@ -397,16 +404,6 @@ class SparkModal extends Modal {
       this.shuffleOne(side);
     });
 
-    const pickBtn = actions.createEl("button", {
-      cls: "fk-action-btn",
-      text: "Pick…",
-    });
-    pickBtn.addEventListener("click", () => {
-      this.onPick((file: TFile) => {
-        this.replaceNote(side, file);
-      });
-    });
-
     return { titleEl, contentEl };
   }
 
@@ -421,6 +418,27 @@ class SparkModal extends Modal {
 
     contentEl.empty();
     contentEl.setText(content);
+  }
+
+  private chooseSlotAndReplace(file: TFile) {
+    const modal = new Modal(this.app);
+    modal.titleEl.setText("Place as which card?");
+    const row = modal.contentEl.createDiv({ cls: "fk-slot-choice" });
+    const place = (side: "A" | "B") => {
+      this.replaceNote(side, file);
+      modal.close();
+    };
+    const btnA = row.createEl("button", {
+      cls: "mod-cta",
+      text: `Card A  (${this.noteA.basename})`,
+    });
+    btnA.addEventListener("click", () => place("A"));
+    const btnB = row.createEl("button", {
+      cls: "mod-cta",
+      text: `Card B  (${this.noteB.basename})`,
+    });
+    btnB.addEventListener("click", () => place("B"));
+    modal.open();
   }
 
   private async replaceNote(side: "A" | "B", file: TFile) {

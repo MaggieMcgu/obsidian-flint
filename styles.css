@@ -342,3 +342,12 @@
   color: var(--text-muted);
   font-size: 0.85em;
 }
+
+.fk-slot-choice {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.fk-slot-choice button {
+  flex: 1;
+}

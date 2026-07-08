@@ -219,7 +219,13 @@ var SparkModal = class extends import_obsidian.Modal {
       }
     }
     const btnRow = contentEl.createDiv({ cls: "fk-btn-row" });
-    const skipBtn = btnRow.createEl("button", { text: "Skip" });
+    const pickBtn = btnRow.createEl("button", { text: "Pick specific card" });
+    pickBtn.addEventListener("click", () => {
+      this.onPick((file) => {
+        this.chooseSlotAndReplace(file);
+      });
+    });
+    const skipBtn = btnRow.createEl("button", { text: "New cards" });
     skipBtn.addEventListener("click", () => {
       this.onSkip(this.noteA, this.noteB);
       this.shuffleBoth(textarea, titleInput);
@@ -279,15 +285,6 @@ var SparkModal = class extends import_obsidian.Modal {
     shuffleBtn.addEventListener("click", () => {
       this.shuffleOne(side);
     });
-    const pickBtn = actions.createEl("button", {
-      cls: "fk-action-btn",
-      text: "Pick\u2026"
-    });
-    pickBtn.addEventListener("click", () => {
-      this.onPick((file) => {
-        this.replaceNote(side, file);
-      });
-    });
     return { titleEl, contentEl };
   }
   renderPanel(side) {
@@ -299,6 +296,26 @@ var SparkModal = class extends import_obsidian.Modal {
     titleEl.setText(note.basename);
     contentEl.empty();
     contentEl.setText(content);
+  }
+  chooseSlotAndReplace(file) {
+    const modal = new import_obsidian.Modal(this.app);
+    modal.titleEl.setText("Place as which card?");
+    const row = modal.contentEl.createDiv({ cls: "fk-slot-choice" });
+    const place = (side) => {
+      this.replaceNote(side, file);
+      modal.close();
+    };
+    const btnA = row.createEl("button", {
+      cls: "mod-cta",
+      text: `Card A  (${this.noteA.basename})`
+    });
+    btnA.addEventListener("click", () => place("A"));
+    const btnB = row.createEl("button", {
+      cls: "mod-cta",
+      text: `Card B  (${this.noteB.basename})`
+    });
+    btnB.addEventListener("click", () => place("B"));
+    modal.open();
   }
   async replaceNote(side, file) {
     const content = await this.app.vault.read(file);
