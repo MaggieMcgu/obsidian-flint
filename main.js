@@ -28,17 +28,27 @@ __export(main_exports, {
 });
 module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
+var PROMPTS = [
+  "What does this collision make you think?",
+  "What would one say to the other?",
+  "What do they secretly share?",
+  "What breaks if both are true?",
+  "What's the third thing hiding between them?",
+  "What tension sits between these two?"
+];
 var DEFAULT_SETTINGS = {
   sourceFolder: "",
   outputFolder: "",
   includeOrphans: true,
+  crossFolder: false,
+  tagSparks: false,
   showEssayProjects: true,
   sparkHistory: []
 };
 function sanitizeFilename(name) {
   return name.replace(/[/\\:*?"<>|]/g, "").trim();
 }
-function getRandomNote(exclude, app, settings) {
+function getRandomNote(exclude, app, settings, differentFolderFrom) {
   let pool = app.vault.getMarkdownFiles();
   if (settings.sourceFolder) {
     const prefix = settings.sourceFolder + "/";
@@ -49,6 +59,14 @@ function getRandomNote(exclude, app, settings) {
     ...settings.sparkHistory.slice(-10).flatMap((e) => [e.noteA, e.noteB])
   ]);
   pool = pool.filter((f) => !recentPaths.has(f.path));
+  if (settings.crossFolder && differentFolderFrom !== void 0) {
+    const crossPool = pool.filter((f) => {
+      var _a;
+      return ((_a = f.parent) == null ? void 0 : _a.path) !== differentFolderFrom;
+    });
+    if (crossPool.length > 0)
+      pool = crossPool;
+  }
   if (pool.length === 0)
     return null;
   if (settings.includeOrphans) {
@@ -105,6 +123,7 @@ var SparkModal = class extends import_obsidian.Modal {
   constructor(app, noteA, noteB, contentA, contentB, settings, cairnProjects, onSpark, onSkip, onShuffle, onPick, onSettingsChange) {
     super(app);
     this.seenPaths = /* @__PURE__ */ new Set();
+    this.lastPromptIdx = -1;
     this.noteA = noteA;
     this.noteB = noteB;
     this.contentA = contentA;
@@ -164,17 +183,20 @@ var SparkModal = class extends import_obsidian.Modal {
     const panelB = this.buildPanel(columns, "B");
     this.panelTitleA = panelA.titleEl;
     this.panelContentA = panelA.contentEl;
+    this.panelFolderA = panelA.folderEl;
     this.panelTitleB = panelB.titleEl;
     this.panelContentB = panelB.contentEl;
+    this.panelFolderB = panelB.folderEl;
     this.seenPaths.add(this.noteA.path);
     this.seenPaths.add(this.noteB.path);
     this.renderPanel("A");
     this.renderPanel("B");
     const writing = contentEl.createDiv({ cls: "fk-writing-area" });
-    writing.createEl("label", {
+    this.promptEl = writing.createEl("label", {
       cls: "fk-writing-prompt",
-      text: "What does this collision make you think?"
+      text: PROMPTS[0]
     });
+    this.rotatePrompt();
     const textarea = writing.createEl("textarea", {
       cls: "fk-idea-textarea",
       placeholder: "The spark goes here\u2026"
@@ -271,11 +293,13 @@ var SparkModal = class extends import_obsidian.Modal {
   }
   buildPanel(parent, side) {
     const panel = parent.createDiv({ cls: "fk-panel" });
+    panel.addClass(side === "A" ? "fk-panel-a" : "fk-panel-b");
     const titleEl = panel.createDiv({ cls: "fk-panel-title" });
     titleEl.addEventListener("click", () => {
       const file = side === "A" ? this.noteA : this.noteB;
       this.app.workspace.openLinkText(file.path, "", true);
     });
+    const folderEl = panel.createDiv({ cls: "fk-panel-folder" });
     const contentEl = panel.createDiv({ cls: "fk-panel-content" });
     const actions = panel.createDiv({ cls: "fk-panel-actions" });
     const shuffleBtn = actions.createEl("button", {
@@ -285,15 +309,30 @@ var SparkModal = class extends import_obsidian.Modal {
     shuffleBtn.addEventListener("click", () => {
       this.shuffleOne(side);
     });
-    return { titleEl, contentEl };
+    return { titleEl, contentEl, folderEl };
+  }
+  // Show a fresh provocation, avoiding an immediate repeat.
+  rotatePrompt() {
+    if (!this.promptEl)
+      return;
+    let idx = Math.floor(Math.random() * PROMPTS.length);
+    if (PROMPTS.length > 1 && idx === this.lastPromptIdx) {
+      idx = (idx + 1) % PROMPTS.length;
+    }
+    this.lastPromptIdx = idx;
+    this.promptEl.setText(PROMPTS[idx]);
   }
   renderPanel(side) {
+    var _a;
     const titleEl = side === "A" ? this.panelTitleA : this.panelTitleB;
     const contentEl = side === "A" ? this.panelContentA : this.panelContentB;
+    const folderEl = side === "A" ? this.panelFolderA : this.panelFolderB;
     const note = side === "A" ? this.noteA : this.noteB;
     const content = side === "A" ? this.contentA : this.contentB;
     titleEl.empty();
     titleEl.setText(note.basename);
+    const folder = (_a = note.parent) == null ? void 0 : _a.path;
+    folderEl.setText(!folder || folder === "/" ? "vault root" : folder);
     contentEl.empty();
     contentEl.setText(content);
   }
@@ -329,13 +368,15 @@ var SparkModal = class extends import_obsidian.Modal {
     this.renderPanel(side);
   }
   shuffleOne(side) {
+    var _a;
+    const otherFolder = (_a = (side === "A" ? this.noteB : this.noteA).parent) == null ? void 0 : _a.path;
     const exclude = [...this.seenPaths];
-    const newNote = this.onShuffle(exclude);
+    const newNote = this.onShuffle(exclude, otherFolder);
     if (!newNote) {
       this.seenPaths.clear();
       this.seenPaths.add(this.noteA.path);
       this.seenPaths.add(this.noteB.path);
-      const retry = this.onShuffle([...this.seenPaths]);
+      const retry = this.onShuffle([...this.seenPaths], otherFolder);
       if (!retry) {
         new import_obsidian.Notice("No more notes to shuffle \u2014 try broadening your source folder.");
         return;
@@ -350,6 +391,7 @@ var SparkModal = class extends import_obsidian.Modal {
           this.contentB = content;
         }
         this.renderPanel(side);
+        this.rotatePrompt();
       });
       return;
     }
@@ -363,14 +405,16 @@ var SparkModal = class extends import_obsidian.Modal {
         this.contentB = content;
       }
       this.renderPanel(side);
+      this.rotatePrompt();
     });
   }
   shuffleBoth(textarea, titleInput) {
+    var _a;
     const excludeA = [];
     const newA = this.onShuffle(excludeA);
     if (!newA)
       return;
-    const newB = this.onShuffle([newA.path]);
+    const newB = this.onShuffle([newA.path], (_a = newA.parent) == null ? void 0 : _a.path);
     if (!newB)
       return;
     Promise.all([
@@ -383,6 +427,7 @@ var SparkModal = class extends import_obsidian.Modal {
       this.contentB = cB;
       this.renderPanel("A");
       this.renderPanel("B");
+      this.rotatePrompt();
       if (textarea)
         textarea.value = "";
       if (titleInput)
@@ -409,11 +454,13 @@ var FlintPlugin = class extends import_obsidian.Plugin {
     this.addSettingTab(new FlintSettingTab(this.app, this));
   }
   async openSpark() {
+    var _a;
     const noteA = getRandomNote([], this.app, this.settings);
     const noteB = getRandomNote(
       noteA ? [noteA.path] : [],
       this.app,
-      this.settings
+      this.settings,
+      (_a = noteA == null ? void 0 : noteA.parent) == null ? void 0 : _a.path
     );
     if (!noteA || !noteB) {
       new import_obsidian.Notice(
@@ -469,7 +516,13 @@ var FlintPlugin = class extends import_obsidian.Plugin {
       new import_obsidian.Notice(`File "${targetPath}" already exists`);
       return;
     }
-    const lines = [
+    const lines = [];
+    if (this.settings.tagSparks) {
+      const now = new Date();
+      const created = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      lines.push("---", "type: spark", `created: ${created}`, "tags: [flint]", "---", "");
+    }
+    lines.push(
       idea.trim(),
       "",
       "---",
@@ -479,7 +532,7 @@ var FlintPlugin = class extends import_obsidian.Plugin {
       `- [[${noteA.basename}]]`,
       `- [[${noteB.basename}]]`,
       ""
-    ];
+    );
     await this.app.vault.create(targetPath, lines.join("\n"));
     this.logSpark(noteA.path, noteB.path, "sparked", targetPath);
     if (selectedProjectIds.length > 0) {
@@ -598,6 +651,24 @@ var FlintSettingTab = class extends import_obsidian.PluginSettingTab {
       toggle.setValue(this.plugin.settings.includeOrphans);
       toggle.onChange(async (val) => {
         this.plugin.settings.includeOrphans = val;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian.Setting(containerEl).setName("Cross-folder collisions").setDesc(
+      "Draw the two cards from different folders. Distance between domains is where the best sparks live. Falls back to same-folder if there's nothing else to pair."
+    ).addToggle((toggle) => {
+      toggle.setValue(this.plugin.settings.crossFolder);
+      toggle.onChange(async (val) => {
+        this.plugin.settings.crossFolder = val;
+        await this.plugin.saveSettings();
+      });
+    });
+    new import_obsidian.Setting(containerEl).setName("Tag spark notes").setDesc(
+      "Add YAML frontmatter (type: spark, created, tags: [flint]) to each new spark, so your sparks are a queryable Dataview corpus. Off by default."
+    ).addToggle((toggle) => {
+      toggle.setValue(this.plugin.settings.tagSparks);
+      toggle.onChange(async (val) => {
+        this.plugin.settings.tagSparks = val;
         await this.plugin.saveSettings();
       });
     });

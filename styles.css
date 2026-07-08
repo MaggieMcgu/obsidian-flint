@@ -78,7 +78,7 @@
 /* Two-column layout */
 .fk-columns {
   display: flex;
-  gap: 6px;
+  gap: 12px;
   align-items: stretch;
   margin-bottom: 16px;
 }
@@ -99,21 +99,60 @@
   height: 16px;
 }
 
-/* Each note panel */
+/* Each note panel — a "card" */
 .fk-panel {
+  position: relative;
   flex: 1;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 11px 14px 10px;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  background: linear-gradient(
+    180deg,
+    var(--background-primary) 0%,
+    var(--background-secondary) 100%
+  );
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.fk-panel:hover {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.08),
+    0 8px 22px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Warm accent hairline at the top of each card — the flint spark.
+   Black on the OUTER edge, full warm on the INNER (facing) edge, so the
+   two cards' warms meet and unite across the center gap. */
+.fk-panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  border-radius: 2px;
+}
+
+.fk-panel-a::before {
+  background: linear-gradient(90deg, #000 0%, #e8873a 100%);
+}
+
+.fk-panel-b::before {
+  background: linear-gradient(90deg, #d15b3a 0%, #000 100%);
 }
 
 .fk-panel-title {
-  font-weight: 600;
-  font-size: 1em;
-  margin-bottom: 8px;
+  font-weight: 650;
+  font-size: 1.02em;
+  letter-spacing: -0.01em;
+  margin-bottom: 2px;
   cursor: pointer;
   color: var(--text-accent);
   word-break: break-word;
@@ -123,18 +162,31 @@
   text-decoration: underline;
 }
 
+/* Small folder chip under the title — makes cross-folder distance visible */
+.fk-panel-folder {
+  font-size: 0.7em;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+
 .fk-panel-content {
   flex: 1;
-  max-height: 140px;
+  max-height: 120px;
   overflow-y: auto;
   font-size: 0.85em;
   line-height: 1.6;
   color: var(--text-normal);
   white-space: pre-wrap;
   word-break: break-word;
-  padding: 8px 10px;
-  background: var(--background-secondary);
-  border-radius: 6px;
+  padding: 9px 11px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border-hover);
+  border-radius: 8px;
   margin-bottom: 10px;
 }
 

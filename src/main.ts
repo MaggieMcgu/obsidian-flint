@@ -25,9 +25,22 @@ interface FlintSettings {
   sourceFolder: string;
   outputFolder: string;
   includeOrphans: boolean;
+  crossFolder: boolean;
+  tagSparks: boolean;
   showEssayProjects: boolean;
   sparkHistory: SparkEntry[];
 }
+
+// Rotating provocations — the prompt above the writing area changes with
+// each new collision, to nudge a different kind of spark from the same pair.
+const PROMPTS: string[] = [
+  "What does this collision make you think?",
+  "What would one say to the other?",
+  "What do they secretly share?",
+  "What breaks if both are true?",
+  "What's the third thing hiding between them?",
+  "What tension sits between these two?",
+];
 
 // Cairn project shape (read from Cairn's data.json)
 interface CairnProject {
@@ -41,6 +54,8 @@ const DEFAULT_SETTINGS: FlintSettings = {
   sourceFolder: "",
   outputFolder: "",
   includeOrphans: true,
+  crossFolder: false,
+  tagSparks: false,
   showEssayProjects: true,
   sparkHistory: [],
 };
@@ -54,7 +69,8 @@ function sanitizeFilename(name: string): string {
 function getRandomNote(
   exclude: string[],
   app: App,
-  settings: FlintSettings
+  settings: FlintSettings,
+  differentFolderFrom?: string
 ): TFile | null {
   let pool = app.vault.getMarkdownFiles();
 
@@ -72,6 +88,13 @@ function getRandomNote(
       .flatMap((e) => [e.noteA, e.noteB]),
   ]);
   pool = pool.filter((f) => !recentPaths.has(f.path));
+
+  // Cross-folder collisions: force this card out of the other card's folder.
+  // Falls back to the unconstrained pool if that would leave nothing.
+  if (settings.crossFolder && differentFolderFrom !== undefined) {
+    const crossPool = pool.filter((f) => f.parent?.path !== differentFolderFrom);
+    if (crossPool.length > 0) pool = crossPool;
+  }
 
   if (pool.length === 0) return null;
 
@@ -155,7 +178,7 @@ class SparkModal extends Modal {
     selectedProjectIds: string[]
   ) => Promise<void>;
   onSkip: (fileA: TFile, fileB: TFile) => void;
-  onShuffle: (exclude: string[]) => TFile | null;
+  onShuffle: (exclude: string[], differentFolderFrom?: string) => TFile | null;
   onPick: (onChoose: (file: TFile) => void) => void;
   private seenPaths: Set<string> = new Set();
   onSettingsChange: () => void;
@@ -165,6 +188,10 @@ class SparkModal extends Modal {
   private panelContentA!: HTMLElement;
   private panelTitleB!: HTMLElement;
   private panelContentB!: HTMLElement;
+  private panelFolderA!: HTMLElement;
+  private panelFolderB!: HTMLElement;
+  private promptEl!: HTMLElement;
+  private lastPromptIdx = -1;
 
   constructor(
     app: App,
@@ -256,8 +283,10 @@ class SparkModal extends Modal {
 
     this.panelTitleA = panelA.titleEl;
     this.panelContentA = panelA.contentEl;
+    this.panelFolderA = panelA.folderEl;
     this.panelTitleB = panelB.titleEl;
     this.panelContentB = panelB.contentEl;
+    this.panelFolderB = panelB.folderEl;
 
     this.seenPaths.add(this.noteA.path);
     this.seenPaths.add(this.noteB.path);
@@ -266,10 +295,11 @@ class SparkModal extends Modal {
 
     // Writing area
     const writing = contentEl.createDiv({ cls: "fk-writing-area" });
-    writing.createEl("label", {
+    this.promptEl = writing.createEl("label", {
       cls: "fk-writing-prompt",
-      text: "What does this collision make you think?",
+      text: PROMPTS[0],
     });
+    this.rotatePrompt();
 
     const textarea = writing.createEl("textarea", {
       cls: "fk-idea-textarea",
@@ -383,14 +413,17 @@ class SparkModal extends Modal {
   private buildPanel(
     parent: HTMLElement,
     side: "A" | "B"
-  ): { titleEl: HTMLElement; contentEl: HTMLElement } {
+  ): { titleEl: HTMLElement; contentEl: HTMLElement; folderEl: HTMLElement } {
     const panel = parent.createDiv({ cls: "fk-panel" });
+    panel.addClass(side === "A" ? "fk-panel-a" : "fk-panel-b");
 
     const titleEl = panel.createDiv({ cls: "fk-panel-title" });
     titleEl.addEventListener("click", () => {
       const file = side === "A" ? this.noteA : this.noteB;
       this.app.workspace.openLinkText(file.path, "", true);
     });
+
+    const folderEl = panel.createDiv({ cls: "fk-panel-folder" });
 
     const contentEl = panel.createDiv({ cls: "fk-panel-content" });
 
@@ -404,17 +437,32 @@ class SparkModal extends Modal {
       this.shuffleOne(side);
     });
 
-    return { titleEl, contentEl };
+    return { titleEl, contentEl, folderEl };
+  }
+
+  // Show a fresh provocation, avoiding an immediate repeat.
+  private rotatePrompt() {
+    if (!this.promptEl) return;
+    let idx = Math.floor(Math.random() * PROMPTS.length);
+    if (PROMPTS.length > 1 && idx === this.lastPromptIdx) {
+      idx = (idx + 1) % PROMPTS.length;
+    }
+    this.lastPromptIdx = idx;
+    this.promptEl.setText(PROMPTS[idx]);
   }
 
   private renderPanel(side: "A" | "B") {
     const titleEl = side === "A" ? this.panelTitleA : this.panelTitleB;
     const contentEl = side === "A" ? this.panelContentA : this.panelContentB;
+    const folderEl = side === "A" ? this.panelFolderA : this.panelFolderB;
     const note = side === "A" ? this.noteA : this.noteB;
     const content = side === "A" ? this.contentA : this.contentB;
 
     titleEl.empty();
     titleEl.setText(note.basename);
+
+    const folder = note.parent?.path;
+    folderEl.setText(!folder || folder === "/" ? "vault root" : folder);
 
     contentEl.empty();
     contentEl.setText(content);
@@ -454,14 +502,16 @@ class SparkModal extends Modal {
   }
 
   private shuffleOne(side: "A" | "B") {
+    // Keep the new card out of the *other* card's folder when cross-folder is on.
+    const otherFolder = (side === "A" ? this.noteB : this.noteA).parent?.path;
     const exclude = [...this.seenPaths];
-    const newNote = this.onShuffle(exclude);
+    const newNote = this.onShuffle(exclude, otherFolder);
     if (!newNote) {
       // Reset seen paths (keep only current pair) and try again
       this.seenPaths.clear();
       this.seenPaths.add(this.noteA.path);
       this.seenPaths.add(this.noteB.path);
-      const retry = this.onShuffle([...this.seenPaths]);
+      const retry = this.onShuffle([...this.seenPaths], otherFolder);
       if (!retry) {
         new Notice("No more notes to shuffle — try broadening your source folder.");
         return;
@@ -471,6 +521,7 @@ class SparkModal extends Modal {
         if (side === "A") { this.noteA = retry; this.contentA = content; }
         else { this.noteB = retry; this.contentB = content; }
         this.renderPanel(side);
+        this.rotatePrompt();
       });
       return;
     }
@@ -484,6 +535,7 @@ class SparkModal extends Modal {
         this.contentB = content;
       }
       this.renderPanel(side);
+      this.rotatePrompt();
     });
   }
 
@@ -491,7 +543,7 @@ class SparkModal extends Modal {
     const excludeA: string[] = [];
     const newA = this.onShuffle(excludeA);
     if (!newA) return;
-    const newB = this.onShuffle([newA.path]);
+    const newB = this.onShuffle([newA.path], newA.parent?.path);
     if (!newB) return;
 
     Promise.all([
@@ -504,6 +556,7 @@ class SparkModal extends Modal {
       this.contentB = cB;
       this.renderPanel("A");
       this.renderPanel("B");
+      this.rotatePrompt();
       if (textarea) textarea.value = "";
       if (titleInput) titleInput.value = "";
       if (textarea) setTimeout(() => textarea.focus(), 50);
@@ -542,7 +595,8 @@ export default class FlintPlugin extends Plugin {
     const noteB = getRandomNote(
       noteA ? [noteA.path] : [],
       this.app,
-      this.settings
+      this.settings,
+      noteA?.parent?.path
     );
 
     if (!noteA || !noteB) {
@@ -612,7 +666,15 @@ export default class FlintPlugin extends Plugin {
       return;
     }
 
-    const lines = [
+    // Frontmatter makes sparks a queryable corpus (Dataview: type = "spark").
+    // Opt-in via settings so it never silently changes note output.
+    const lines: string[] = [];
+    if (this.settings.tagSparks) {
+      const now = new Date();
+      const created = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      lines.push("---", "type: spark", `created: ${created}`, "tags: [flint]", "---", "");
+    }
+    lines.push(
       idea.trim(),
       "",
       "---",
@@ -621,8 +683,8 @@ export default class FlintPlugin extends Plugin {
       "",
       `- [[${noteA.basename}]]`,
       `- [[${noteB.basename}]]`,
-      "",
-    ];
+      ""
+    );
 
     await this.app.vault.create(targetPath, lines.join("\n"));
     this.logSpark(noteA.path, noteB.path, "sparked", targetPath);
@@ -775,6 +837,34 @@ class FlintSettingTab extends PluginSettingTab {
         toggle.setValue(this.plugin.settings.includeOrphans);
         toggle.onChange(async (val) => {
           this.plugin.settings.includeOrphans = val;
+          await this.plugin.saveSettings();
+        });
+      });
+
+    // Cross-folder collisions
+    new Setting(containerEl)
+      .setName("Cross-folder collisions")
+      .setDesc(
+        "Draw the two cards from different folders. Distance between domains is where the best sparks live. Falls back to same-folder if there's nothing else to pair."
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.crossFolder);
+        toggle.onChange(async (val) => {
+          this.plugin.settings.crossFolder = val;
+          await this.plugin.saveSettings();
+        });
+      });
+
+    // Tag spark notes
+    new Setting(containerEl)
+      .setName("Tag spark notes")
+      .setDesc(
+        "Add YAML frontmatter (type: spark, created, tags: [flint]) to each new spark, so your sparks are a queryable Dataview corpus. Off by default."
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.tagSparks);
+        toggle.onChange(async (val) => {
+          this.plugin.settings.tagSparks = val;
           await this.plugin.saveSettings();
         });
       });
