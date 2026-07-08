@@ -127,27 +127,6 @@
   transform: translateY(-1px);
 }
 
-/* Warm accent hairline at the top of each card — the flint spark.
-   Black on the OUTER edge, full warm on the INNER (facing) edge, so the
-   two cards' warms meet and unite across the center gap. */
-.fk-panel::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 14px;
-  right: 14px;
-  height: 2px;
-  border-radius: 2px;
-}
-
-.fk-panel-a::before {
-  background: linear-gradient(90deg, #000 0%, #e8873a 100%);
-}
-
-.fk-panel-b::before {
-  background: linear-gradient(90deg, #d15b3a 0%, #000 100%);
-}
-
 .fk-panel-title {
   font-weight: 650;
   font-size: 1.02em;
